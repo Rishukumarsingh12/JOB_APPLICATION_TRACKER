@@ -21,7 +21,13 @@ class UserResponse(BaseModel):
     email: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+# ---------- Token Schema ----------
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 
 # ---------- Job Schemas ----------
@@ -41,4 +47,4 @@ class JobResponse(BaseModel):
     notes: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
