@@ -6,10 +6,11 @@ from fastapi.templating import Jinja2Templates
 #  NEW IMPORTS
 from .database import engine
 from . import models
-from .routers import user
+from .routers import user,jobs
 
 
 app = FastAPI()
+app.include_router(jobs.router)
 
 #  Create tables automatically
 models.Base.metadata.create_all(bind=engine)
