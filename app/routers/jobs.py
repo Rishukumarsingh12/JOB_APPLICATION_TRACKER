@@ -25,7 +25,17 @@ def create_job(job: schemas.JobCreate,
     db.commit()
     db.refresh(new_job)
 
-    return new_job
+    return {
+    "success": True,
+    "message": "Job created successfully",
+    "data": {
+        "id": new_job.id,
+        "company": new_job.company,
+        "role": new_job.role,
+        "status": new_job.status,
+        "notes": new_job.notes
+    }
+    }
 
 
 # Get all jobs of current user
@@ -37,7 +47,11 @@ def get_jobs(db: Session = Depends(get_db),
         models.Job.user_id == current_user.id
     ).all()
 
-    return jobs
+    return {
+    "success": True,
+    "message": "Jobs fetched successfully",
+    "data": jobs
+}
 
 
 # Update job status
@@ -63,7 +77,11 @@ def update_job(job_id: int,
     db.commit()
     db.refresh(db_job)
 
-    return db_job
+    return {
+    "success": True,
+    "message": "Job updated successfully",
+    "data": db_job
+}
 
 
 # Delete job
@@ -83,4 +101,7 @@ def delete_job(job_id: int,
     db.delete(db_job)
     db.commit()
 
-    return {"message": "Job deleted successfully"}
+    return {
+    "success": True,
+    "message": "Job deleted successfully"
+}

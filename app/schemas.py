@@ -48,3 +48,8 @@ class JobResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class APIResponse(BaseModel):
+    success: bool
+    message: str
+    data: Optional[dict] = None
