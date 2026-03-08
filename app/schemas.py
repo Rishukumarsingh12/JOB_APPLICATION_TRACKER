@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-
+from enum import Enum
 
 # ---------- User Schemas ----------
 
@@ -32,10 +32,17 @@ class Token(BaseModel):
 
 # ---------- Job Schemas ----------
 
+class JobStatus(str, Enum):
+    applied = "Applied"
+    interview = "Interview"
+    rejected = "Rejected"
+    offer = "Offer"
+
+
 class JobCreate(BaseModel):
     company: str
     role: str
-    status: Optional[str] = "Applied"
+    status: Optional[str] = JobStatus.applied
     notes: Optional[str] = None
 
 
@@ -53,3 +60,5 @@ class APIResponse(BaseModel):
     success: bool
     message: str
     data: Optional[dict] = None
+
+
