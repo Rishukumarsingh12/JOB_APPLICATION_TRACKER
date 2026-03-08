@@ -8,6 +8,7 @@ from .database import engine
 from . import models
 from .routers import user
 
+
 app = FastAPI()
 
 #  Create tables automatically
@@ -38,3 +39,6 @@ async def login(request: Request):
 @app.get("/register", response_class=HTMLResponse)
 async def register(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
+
+
+
