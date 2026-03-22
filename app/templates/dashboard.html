@@ -1,54 +1,277 @@
-<!-- app/templates/dashboard.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Dashboard - Job Tracker</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
 
-<div class="container">
-    <h2>Your Job Applications</h2>
+<div class="dashboard-container">
 
-    <!-- Add Job Form -->
-    <form action="/jobs" method="post">
-        <div class="form-group">
-            <input type="text" name="company" placeholder="Company" required>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1>Job Application Tracker</h1>
+    <button onclick="logout()" class="logout-btn">Logout</button>
+</div>
+
+    <!-- Job Stats -->
+    <div class="stats-container">
+
+        <div class="card">
+            <h3>Applied</h3>
+            <p id="appliedCount">0</p>
         </div>
 
-        <div class="form-group">
-            <input type="text" name="role" placeholder="Role" required>
+        <div class="card">
+            <h3>Interview</h3>
+            <p id="interviewCount">0</p>
         </div>
 
-        <div class="form-group">
-            <select name="status">
+        <div class="card">
+            <h3>Rejected</h3>
+            <p id="rejectedCount">0</p>
+        </div>
+
+        <div class="card">
+            <h3>Offer</h3>
+            <p id="offerCount">0</p>
+        </div>
+
+    </div>
+
+
+    <!-- Add Job -->
+    <div class="add-job">
+
+        <h2>Add Job</h2>
+
+        <form id="jobForm">
+
+            <input type="text" id="company" placeholder="Company" required>
+
+            <input type="text" id="role" placeholder="Role" required>
+
+            <select id="status">
                 <option value="Applied">Applied</option>
                 <option value="Interview">Interview</option>
                 <option value="Rejected">Rejected</option>
                 <option value="Offer">Offer</option>
             </select>
-        </div>
 
-        <div class="form-group">
-            <textarea name="notes" placeholder="Notes"></textarea>
-        </div>
+            <input type="text" id="notes" placeholder="Notes">
 
-        <button type="submit">Add Job</button>
-    </form>
+            <button type="submit">Add Job</button>
 
-    <hr>
+        </form>
+
+    </div>
+
 
     <!-- Job List -->
-    {% for job in jobs %}
-        <div class="job-card">
-            <h3>{{ job.company }} - {{ job.role }}</h3>
-            <p>Status: {{ job.status }}</p>
-            <p>{{ job.notes }}</p>
-        </div>
-    {% endfor %}
+    <div class="job-list">
+
+        <h2>Your Applications</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody id="jobTable"></tbody>
+
+        </table>
+
+    </div>
 
 </div>
+
+
+<script>
+
+const token = localStorage.getItem("token")
+
+if(!token){
+    window.location.href = "/login"
+}
+
+async function loadJobs(){
+
+    const response = await fetch("/jobs",{
+        headers:{
+            "Authorization": "Bearer " + token
+        }
+    })
+
+    const data = await response.json()
+    const jobs = data.data
+
+    const table = document.getElementById("jobTable")
+    table.innerHTML = ""
+
+    jobs.forEach(job => {
+
+        const row = `
+        <tr>
+            <td>${job.company}</td>
+            <td>${job.role}</td>
+            <td>${job.status}</td>
+            <td>${job.notes || ""}</td>
+            <td>
+            <button onclick="editJob(${job.id}, '${job.company}', '${job.role}', '${job.status}', '${job.notes || ""}')">Edit</button>
+            <button onclick="deleteJob(${job.id})" style="background:red;">Delete</button>
+            </td>
+        </tr>
+        `
+
+        table.innerHTML += row
+    })
+}
+
+async function loadStats(){
+
+    const response = await fetch("/jobs/stats",{
+        headers:{
+            "Authorization": "Bearer " + token
+        }
+    })
+
+    const data = await response.json().then(res => res.data || {})
+
+        // RESET FIRST (IMPORTANT)
+    document.getElementById("appliedCount").innerText = 0
+    document.getElementById("interviewCount").innerText = 0
+    document.getElementById("rejectedCount").innerText = 0
+    document.getElementById("offerCount").innerText = 0
+
+    document.getElementById("appliedCount").innerText = data.Applied || 0
+    document.getElementById("interviewCount").innerText = data.Interview || 0
+    document.getElementById("rejectedCount").innerText = data.Rejected || 0
+    document.getElementById("offerCount").innerText = data.Offer || 0
+}
+
+
+document.getElementById("jobForm").addEventListener("submit", async function(e){
+
+    e.preventDefault()
+
+    const company = document.getElementById("company").value
+    const role = document.getElementById("role").value
+    const status = document.getElementById("status").value
+    const notes = document.getElementById("notes").value
+
+    await fetch("/jobs",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json",
+            "Authorization":"Bearer " + token
+        },
+
+        body: JSON.stringify({
+            company,
+            role,
+            status,
+            notes
+        })
+
+    })
+
+
+
+     if(response.ok){
+
+        // RESET FORM HERE
+        document.getElementById("jobForm").reset()
+
+        // reload UI
+        loadJobs()
+        loadStats()
+
+    } else {
+        alert("Failed to add job")
+    }
+
+})
+
+
+function logout(){
+
+    localStorage.removeItem("token")
+
+    window.location.href = "/login"
+
+}
+
+function editJob(id, company, role, status, notes){
+
+    document.getElementById("company").value = company
+    document.getElementById("role").value = role
+    document.getElementById("status").value = status
+    document.getElementById("notes").value = notes
+
+    // change form behavior to UPDATE instead of CREATE
+    const form = document.getElementById("jobForm")
+
+    form.onsubmit = async function(e){
+        e.preventDefault()
+
+        const updatedCompany = document.getElementById("company").value
+        const updatedRole = document.getElementById("role").value
+        const updatedStatus = document.getElementById("status").value
+        const updatedNotes = document.getElementById("notes").value
+
+        await fetch(`/jobs/${id}`,{
+            method:"PUT",
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer " + token
+            },
+            body: JSON.stringify({
+                company: updatedCompany,
+                role: updatedRole,
+                status: updatedStatus,
+                notes: updatedNotes
+            })
+        })
+
+        // reset form behavior back to ADD
+        form.reset()
+        form.onsubmit = null
+
+        loadJobs()
+        loadStats()
+    }
+}
+
+async function deleteJob(id){
+
+    const confirmDelete = confirm("Are you sure you want to delete this job?")
+
+    if(!confirmDelete) return
+
+    await fetch(`/jobs/${id}`,{
+        method:"DELETE",
+        headers:{
+            "Authorization":"Bearer " + token
+        }
+    })
+
+    loadJobs()
+    loadStats()
+}
+
+loadJobs()
+loadStats()
+
+</script>
 
 </body>
 </html>
